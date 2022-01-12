@@ -1,24 +1,29 @@
 import express, { Request, Response, Application } from "express";
+import Database from "better-sqlite3";
 import { computeApy } from "./helpers/helpers";
-import { db, createUserTableIfNotExists, customer_db } from "./models/models";
+import { createUserTableIfNotExists, customer_db } from "./models/models";
 import { dataCache, CACHE_TIME_TO_LEAVE } from "./cache/cache";
 
-const app: Application = express();
-const PORT = process.env.PORT || 8000;
+export const app: Application = express();
+let PORT = process.env.PORT || 8000;
 
-createUserTableIfNotExists();
+export let db = new Database("apy.db", {});
+
+if (process.env.NODE_ENV === "test") {
+  // make the app connect to the test database
+  db = new Database("apy_test.db", {});
+  PORT = 5055;
+}
+
+createUserTableIfNotExists(db);
 
 //parse application/x-www-form-urlencoded
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 app.get("/api/v1/customers", (req: Request, res: Response): void => {
-  if (dataCache.has("customers")) {
-    res.json(dataCache.get("customers"));
-    return;
-  }
+  // for my debugging purposes
   const userRecords = db.prepare("SELECT * FROM users").all();
-  dataCache.set("customers", userRecords, CACHE_TIME_TO_LEAVE);
   res.status(200).json(userRecords);
 });
 
@@ -68,6 +73,7 @@ app.get(
 
     if (selectedUser.length === 0) {
       res.status(404).json({ message: "No history found for this customer" });
+      return;
     }
     res.status(200).json(selectedUser);
   }
@@ -82,11 +88,12 @@ app.delete(
     const returnedUser = db.prepare(deleteUserSql).run();
     if (returnedUser.changes === 0) {
       res.status(404).json({ message: "No history found for this customer" });
+      return;
     }
     res.status(200).json({ message: "USer History deleted successfully" });
   }
 );
 
-app.listen(PORT, (): void => {
+export const server = app.listen(PORT, (): void => {
   console.log(`Server Running here 👉 https://localhost:${PORT}/api/v1`);
 });

@@ -90,7 +90,7 @@ app.delete(
       res.status(404).json({ message: "No history found for this customer" });
       return;
     }
-    res.status(200).json({ message: "USer History deleted successfully" });
+    res.status(200).json({ message: "User History deleted successfully" });
   }
 );
 

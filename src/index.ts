@@ -36,58 +36,67 @@ const computeApy = (r: number, n: number) => {
   return +apy.toFixed(4);
 };
 
-app.get("/users", (req: Request, res: Response): void => {
+app.get("/api/v1/customers", (req: Request, res: Response): void => {
   const userRecords = db.prepare("SELECT * FROM users").all();
   res.status(200).json(userRecords);
 });
 
-app.post("/calculate-apy", (req: Request, res: Response): void => {
-  const { deposit, customer_id, interest_rate, yearly_compound_times } =
-    req.body;
-  const apy = computeApy(+interest_rate, +yearly_compound_times);
-  const computed_total = +deposit + apy;
-  const customerId: string = customer_id;
-  const customerDetails = {
-    apy,
-    computed_total,
-    customer_id,
-    deposit,
-    interest_rate,
-    yearly_compound_times,
-  };
-  db.prepare(
-    `INSERT INTO users(deposit, customer_id, interest_rate,
+app.post(
+  "/api/v1/customer/calculate-apy",
+  (req: Request, res: Response): void => {
+    const { deposit, customer_id, interest_rate, yearly_compound_times } =
+      req.body;
+    const apy = computeApy(+interest_rate, +yearly_compound_times);
+    const computed_total = +deposit + apy;
+    const customerId: string = customer_id;
+    const customerDetails = {
+      apy,
+      computed_total,
+      customer_id,
+      deposit,
+      interest_rate,
+      yearly_compound_times,
+    };
+    db.prepare(
+      `INSERT INTO users(deposit, customer_id, interest_rate,
         yearly_compound_times, apy, computed_total)
     VALUES(${deposit}, ${customer_id}, ${interest_rate},
         ${yearly_compound_times}, ${apy}, ${computed_total})`
-  ).run();
-  customer_db[customerId] = customerDetails;
-  res.status(200).json(customerDetails);
-});
+    ).run();
+    customer_db[customerId] = customerDetails;
+    res.status(200).json(customerDetails);
+  }
+);
 
 //get endpoint for a user history based on the customer id
-app.get("/customer-apy-history/:id", (req: Request, res: Response): void => {
-  const id = req.params.id;
-  const selectUserQuery = `SELECT * FROM users WHERE customer_id = ${id}`;
+app.get(
+  "/api/v1/customer-apy-history/:id",
+  (req: Request, res: Response): void => {
+    const id = req.params.id;
+    const selectUserQuery = `SELECT * FROM users WHERE customer_id = ${id}`;
 
-  const selectedUser = db.prepare(selectUserQuery).all();
-  if (selectedUser.length === 0) {
-    res.status(404).json({ message: "No history found for this customer" });
+    const selectedUser = db.prepare(selectUserQuery).all();
+    if (selectedUser.length === 0) {
+      res.status(404).json({ message: "No history found for this customer" });
+    }
+    res.status(200).json(selectedUser);
   }
-  res.status(200).json(selectedUser);
-});
+);
 
-app.delete("/customer-apy-history/:id", (req: Request, res: Response): void => {
-  const id = req.params.id;
+app.delete(
+  "/api/v1/customer-apy-history/:id",
+  (req: Request, res: Response): void => {
+    const id = req.params.id;
 
-  const deleteUserSql = `DELETE FROM users WHERE customer_id = ${id}`;
-  const returnedUser = db.prepare(deleteUserSql).run();
-  if (returnedUser.changes === 0) {
-    res.status(404).json({ message: "No history found for this customer" });
+    const deleteUserSql = `DELETE FROM users WHERE customer_id = ${id}`;
+    const returnedUser = db.prepare(deleteUserSql).run();
+    if (returnedUser.changes === 0) {
+      res.status(404).json({ message: "No history found for this customer" });
+    }
+    res.status(200).json({ message: "USer History deleted successfully" });
   }
-  res.status(200).json({ message: "USer History deleted successfully" });
-});
+);
 
 app.listen(PORT, (): void => {
-  console.log(`Server Running here 👉 https://localhost:${PORT}`);
+  console.log(`Server Running here 👉 https://localhost:${PORT}/api/v1`);
 });

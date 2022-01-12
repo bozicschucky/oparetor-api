@@ -1,5 +1,12 @@
 import express, { Request, Response, Application } from "express";
 import Database from "better-sqlite3";
+import NodeCache from "node-cache";
+
+const CACHE_TIME_TO_LEAVE = 2 * 60 * 60; // 2 hours in seconds (2 * 60 * 60)
+const dataCache = new NodeCache({
+  stdTTL: CACHE_TIME_TO_LEAVE,
+  checkperiod: 120,
+});
 
 const db = new Database("apy.db", {});
 const app: Application = express();
@@ -37,7 +44,12 @@ const computeApy = (r: number, n: number) => {
 };
 
 app.get("/api/v1/customers", (req: Request, res: Response): void => {
+  if (dataCache.has("customers")) {
+    res.json(dataCache.get("customers"));
+    return;
+  }
   const userRecords = db.prepare("SELECT * FROM users").all();
+  dataCache.set("customers", userRecords, CACHE_TIME_TO_LEAVE);
   res.status(200).json(userRecords);
 });
 
@@ -73,9 +85,18 @@ app.get(
   "/api/v1/customer-apy-history/:id",
   (req: Request, res: Response): void => {
     const id = req.params.id;
-    const selectUserQuery = `SELECT * FROM users WHERE customer_id = ${id}`;
 
+    // return the cached data if it exists
+    const cachedUserData = dataCache.get(id);
+    if (cachedUserData) {
+      res.status(200).json(cachedUserData);
+      return;
+    }
+    // add cached user data
+    const selectUserQuery = `SELECT * FROM users WHERE customer_id = ${id}`;
     const selectedUser = db.prepare(selectUserQuery).all();
+    dataCache.set(id, selectedUser, CACHE_TIME_TO_LEAVE);
+
     if (selectedUser.length === 0) {
       res.status(404).json({ message: "No history found for this customer" });
     }

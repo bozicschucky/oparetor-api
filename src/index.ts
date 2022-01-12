@@ -1,47 +1,16 @@
 import express, { Request, Response, Application } from "express";
-import Database from "better-sqlite3";
-import NodeCache from "node-cache";
+import { computeApy } from "./helpers/helpers";
+import { db, createUserTableIfNotExists, customer_db } from "./models/models";
+import { dataCache, CACHE_TIME_TO_LEAVE } from "./cache/cache";
 
-const CACHE_TIME_TO_LEAVE = 2 * 60 * 60; // 2 hours in seconds (2 * 60 * 60)
-const dataCache = new NodeCache({
-  stdTTL: CACHE_TIME_TO_LEAVE,
-  checkperiod: 120,
-});
-
-const db = new Database("apy.db", {});
 const app: Application = express();
 const PORT = process.env.PORT || 8000;
 
-db.exec(
-  "CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY AUTOINCREMENT, deposit REAL, customer_id INTEGER, interest_rate REAL, yearly_compound_times INTEGER, apy REAL,computed_total REAL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)"
-);
+createUserTableIfNotExists();
 
 //parse application/x-www-form-urlencoded
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-
-interface db {
-  [key: string]: {
-    apy: number;
-    computed_total: number;
-    deposit: number;
-    interest_rate: number;
-    yearly_compound_times: number;
-  };
-}
-
-const customer_db: db = {};
-
-/**
- *
- * @param r the interest rate
- * @param n number of times the interest is compounded per year
- * @returns number apy
- */
-const computeApy = (r: number, n: number) => {
-  const apy: number = ((1 + r / n) ** n - 1) * 100;
-  return +apy.toFixed(4);
-};
 
 app.get("/api/v1/customers", (req: Request, res: Response): void => {
   if (dataCache.has("customers")) {

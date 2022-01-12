@@ -17,13 +17,13 @@ A simple api that enables a user to calculate the apy for some cash deposit.
 ## How to set up the dev environment.
 
 - Clone the repository
-- Run `npm install` or `yarn`
-- Run `npm run dev` or `yarn dev`
+- Run `npm install` or `yarn`.
+- Run `npm run dev` or `yarn dev`.
 - The app will open up locally on `http://localhost:8000/:`.
 
 ## How to run the tests.
 
-- Run `npm run test` or `yarn test`
+- Run `npm run test` or `yarn test`.
 
 ## API Endpoints
 
@@ -115,14 +115,15 @@ DELETE /api/v1/customer-apy-history/:id
 
 - #### Node cache
 
-  - Node cache is easy to use and it is very fast i.e it provides a very simple api to use.
+  - Node cache is easy to use and it is very fast i.e it provides a very simple in memory db to cache values.
+  - it has less configurations as compare to other caching libraries
   - Node cache doesn't have any dependency.
   - Node cache does't require setup as compared to redis.
 
 - #### Prefered Testing Suite (Jest and SuperTest).
   - Jest is a test runner that runs your tests in a Node.js environment and it also implements BDD which makes the grouping and describing tests really easy.
   - SuperTest is a good choice for testing because it is very easy to use and supports other testing frameworks, it also provides a very simple api to interact with while writing tests.
-  - Super Test provides a test agent which can be used to test out the all the api methods for any provided endpoints.
+  - Super Test provides a test agent which can be used to test out the api methods for any provided endpoints.
   - Both provide very good developer documentation which is easy to understand.
 
-N.B. The app is built and tested on windows but should work fine with both mac os and linux
+N.B. The app is built and tested on windows but should work fine with both mac os and linux since the packages used are not platform specific.
